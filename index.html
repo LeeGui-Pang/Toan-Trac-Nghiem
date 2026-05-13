@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Luyện Toán Lớp 3</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section id="home-screen" class="screen active" aria-labelledby="home-title">
+        <div class="top-bar">
+          <div>
+            <p class="eyebrow">Toán lớp 3</p>
+            <h1 id="home-title">Luyện Toán Lớp 3</h1>
+          </div>
+          <button id="sound-toggle" class="icon-button" type="button" aria-pressed="false">
+            <span class="sound-icon" aria-hidden="true">♪</span>
+            <span>Bật âm</span>
+          </button>
+        </div>
+
+        <div class="intro-grid">
+          <div class="intro-copy">
+            <h2>Chọn mức độ để bắt đầu</h2>
+            <p>
+              Mỗi bài có 20 câu trắc nghiệm trong 20 phút. Con hãy chọn mức phù hợp
+              rồi làm thật bình tĩnh nhé.
+            </p>
+          </div>
+          <div class="score-note" aria-label="Cách tính điểm">
+            <strong>0.5 điểm</strong>
+            <span>cho mỗi câu đúng</span>
+          </div>
+        </div>
+
+        <form id="login-form" class="login-panel">
+          <label for="player-name">Họ tên người làm bài</label>
+          <div class="login-row">
+            <input
+              id="player-name"
+              name="player-name"
+              type="text"
+              autocomplete="name"
+              maxlength="40"
+              placeholder="Ví dụ: Nguyễn Minh"
+              required
+            />
+            <button class="primary-button" type="submit">Lưu tên</button>
+          </div>
+          <p id="login-status" class="login-status" aria-live="polite">Nhập họ tên trước khi bắt đầu làm bài.</p>
+        </form>
+
+        <div class="difficulty-grid" aria-label="Chọn mức độ">
+          <button class="difficulty-card easy" type="button" data-difficulty="easy">
+            <span class="level-label">Dễ</span>
+            <strong>Cộng trừ nhẹ nhàng</strong>
+            <small>Số nhỏ, phép tính quen thuộc</small>
+          </button>
+          <button class="difficulty-card medium" type="button" data-difficulty="medium">
+            <span class="level-label">Trung bình</span>
+            <strong>Thử thách vừa sức</strong>
+            <small>Số lớn hơn, có tìm số còn thiếu</small>
+          </button>
+          <button class="difficulty-card hard" type="button" data-difficulty="hard">
+            <span class="level-label">Khó</span>
+            <strong>Phối hợp nhiều phép tính</strong>
+            <small>Cộng trừ kết hợp nhân chia</small>
+          </button>
+        </div>
+
+        <section class="leaderboard-section" aria-labelledby="leaderboard-title">
+          <div class="section-heading">
+            <p class="eyebrow">Kỷ lục</p>
+            <h2 id="leaderboard-title">Bảng xếp hạng</h2>
+          </div>
+          <div id="leaderboards" class="leaderboard-grid"></div>
+        </section>
+      </section>
+
+      <section id="quiz-screen" class="screen" aria-labelledby="quiz-title">
+        <div class="quiz-header">
+          <div>
+            <p class="eyebrow" id="quiz-level">Mức độ</p>
+            <h1 id="quiz-title">Bài trắc nghiệm</h1>
+          </div>
+          <div class="timer" aria-live="polite">
+            <span>Thời gian</span>
+            <strong id="timer">20:00</strong>
+          </div>
+        </div>
+
+        <p id="submit-reminder" class="submit-reminder" aria-live="polite"></p>
+        <div id="question-list" class="question-list"></div>
+
+        <div class="quiz-actions">
+          <button id="submit-quiz" class="primary-button" type="button">Hoàn Thành</button>
+          <button id="back-to-top" class="secondary-button" type="button">Quay Lại</button>
+        </div>
+      </section>
+
+      <section id="result-screen" class="screen" aria-labelledby="result-title">
+        <div id="celebration" class="celebration" aria-hidden="true"></div>
+        <div class="result-hero">
+          <div id="reward-badge" class="reward-badge">★</div>
+          <div>
+            <p class="eyebrow">Kết quả</p>
+            <h1 id="result-title">Con đã hoàn thành bài!</h1>
+            <p id="result-message" class="result-message"></p>
+          </div>
+        </div>
+
+        <div class="result-stats">
+          <div>
+            <span>Người làm</span>
+            <strong id="player-result">-</strong>
+          </div>
+          <div>
+            <span>Điểm</span>
+            <strong id="score-text">0/10</strong>
+          </div>
+          <div>
+            <span>Đúng</span>
+            <strong id="correct-count">0</strong>
+          </div>
+          <div>
+            <span>Sai</span>
+            <strong id="wrong-count">0</strong>
+          </div>
+          <div>
+            <span>Bỏ trống</span>
+            <strong id="blank-count">0</strong>
+          </div>
+          <div>
+            <span>Hoàn thành</span>
+            <strong id="time-used">00:00</strong>
+          </div>
+          <div>
+            <span>Thời điểm</span>
+            <strong id="finish-time">--:--</strong>
+          </div>
+        </div>
+
+        <div class="result-actions">
+          <button id="retry-same" class="primary-button" type="button">Làm lại mức này</button>
+          <button id="go-home" class="secondary-button" type="button">Về trang chính</button>
+        </div>
+
+        <div id="review-list" class="review-list" aria-label="Xem lại đáp án"></div>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
