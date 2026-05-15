@@ -206,7 +206,7 @@ function renderQuestions() {
 
 function selectAnswer(button) {
   const questionIndex = Number(button.dataset.question);
-  const selectedValue = Number(button.dataset.option);
+  const selectedValue = button.dataset.option;
   state.selectedAnswers[questionIndex] = selectedValue;
   clearQuestionWarning(questionIndex);
 
@@ -273,7 +273,7 @@ function calculateResult() {
     const selected = state.selectedAnswers[index];
     if (selected === null) {
       blank += 1;
-    } else if (selected === question.answer) {
+    } else if (selected === String(question.answer)) {
       correct += 1;
     }
   });
@@ -595,7 +595,7 @@ function makeQuestion(difficulty, index) {
   }
 
   if (difficulty === "medium") {
-    return makeMediumQuestion();
+    return makeMediumQuestion(index);
   }
 
   return makeHardQuestion(index);
@@ -627,118 +627,232 @@ function makeEasyQuestion() {
   return buildQuestion(`${divisor * answer} : ${divisor} = ?`, answer);
 }
 
-function makeMediumQuestion() {
-  const type = choose(["add", "subtract", "multiply", "divide", "missingMultiply", "missingAdd"]);
+function makeMediumQuestion(index) {
+  const range = getMediumRange(index);
+  const pattern = index % 4;
+
+  if (pattern === 0 || pattern === 1) {
+    return makeMediumDirectQuestion(range, index);
+  }
+
+  if (pattern === 2) {
+    return makeMediumMissingQuestion(range, index);
+  }
+
+  return makeMediumWordQuestion(range, index);
+}
+
+function getMediumRange(index) {
+  if (index < 5) {
+    return 100;
+  }
+
+  if (index < 10) {
+    return 1000;
+  }
+
+  if (index < 15) {
+    return 10000;
+  }
+
+  return 100000;
+}
+
+function makeMediumDirectQuestion(range, index) {
+  const type = ["add", "subtract", "multiply", "divide"][index % 4];
 
   if (type === "add") {
-    const a = randomInt(80, 430);
-    const b = randomInt(40, 360);
+    const a = randomInt(Math.max(8, Math.floor(range * 0.18)), Math.floor(range * 0.55));
+    const b = randomInt(Math.max(5, Math.floor(range * 0.08)), range - a);
     return buildQuestion(`${a} + ${b} = ?`, a + b);
   }
 
   if (type === "subtract") {
-    const a = randomInt(180, 760);
-    const b = randomInt(50, a - 20);
+    const a = randomInt(Math.max(30, Math.floor(range * 0.45)), range);
+    const b = randomInt(Math.max(5, Math.floor(range * 0.08)), a - 1);
     return buildQuestion(`${a} - ${b} = ?`, a - b);
   }
 
   if (type === "multiply") {
-    const a = randomInt(4, 9);
-    const b = randomInt(5, 9);
-    return buildQuestion(`${a} x ${b} = ?`, a * b);
+    const multiplier = randomInt(2, 9);
+    const a = randomInt(Math.max(3, Math.floor(range * 0.08)), Math.floor(range / multiplier));
+    return buildQuestion(`${a} x ${multiplier} = ?`, a * multiplier);
   }
 
-  if (type === "divide") {
-    const divisor = randomInt(2, 9);
-    const answer = randomInt(5, 12);
-    return buildQuestion(`${divisor * answer} : ${divisor} = ?`, answer);
+  const divisor = randomInt(2, 9);
+  const answer = randomInt(Math.max(3, Math.floor(range * 0.06)), Math.floor(range / divisor));
+  return buildQuestion(`${answer * divisor} : ${divisor} = ?`, answer);
+}
+
+function makeMediumMissingQuestion(range, index) {
+  const type = ["missingAdd", "missingSubtract", "missingMultiply", "missingDivide"][Math.floor(index / 4) % 4];
+
+  if (type === "missingAdd") {
+    const a = randomInt(Math.max(8, Math.floor(range * 0.15)), Math.floor(range * 0.55));
+    const answer = randomInt(Math.max(5, Math.floor(range * 0.08)), range - a);
+    return buildQuestion(`${a} + ? = ${a + answer}`, answer);
+  }
+
+  if (type === "missingSubtract") {
+    const answer = randomInt(Math.max(5, Math.floor(range * 0.08)), Math.floor(range * 0.45));
+    const b = randomInt(Math.max(5, Math.floor(range * 0.07)), range - answer);
+    return buildQuestion(`? - ${b} = ${answer}`, answer + b);
   }
 
   if (type === "missingMultiply") {
-    const hidden = randomInt(2, 9);
-    const known = randomInt(2, 9);
-    return buildQuestion(`? x ${known} = ${hidden * known}`, hidden);
+    const multiplier = randomInt(2, 9);
+    const answer = randomInt(Math.max(3, Math.floor(range * 0.05)), Math.floor(range / multiplier));
+    return buildQuestion(`? x ${multiplier} = ${answer * multiplier}`, answer);
   }
 
-  const a = randomInt(60, 240);
-  const answer = randomInt(20, 160);
-  return buildQuestion(`${a} + ? = ${a + answer}`, answer);
+  const divisor = randomInt(2, 9);
+  const answer = randomInt(Math.max(3, Math.floor(range * 0.04)), Math.floor(range / divisor));
+  return buildQuestion(`? : ${divisor} = ${answer}`, answer * divisor);
+}
+
+function makeMediumWordQuestion(range, index) {
+  const type = ["wordAdd", "wordSubtract", "wordMultiply", "wordDivide"][Math.floor(index / 4) % 4];
+
+  if (type === "wordAdd") {
+    const first = randomInt(Math.max(8, Math.floor(range * 0.2)), Math.floor(range * 0.58));
+    const second = randomInt(Math.max(5, Math.floor(range * 0.1)), range - first);
+    return buildQuestion(
+      `Một cửa hàng buổi sáng bán ${first} quyển vở, buổi chiều bán ${second} quyển vở. Hỏi cửa hàng bán tất cả bao nhiêu quyển vở?`,
+      first + second,
+    );
+  }
+
+  if (type === "wordSubtract") {
+    const total = randomInt(Math.max(30, Math.floor(range * 0.5)), range);
+    const sold = randomInt(Math.max(5, Math.floor(range * 0.1)), total - 1);
+    return buildQuestion(
+      `Một kho có ${total} kg gạo, đã bán ${sold} kg. Hỏi kho còn lại bao nhiêu kg gạo?`,
+      total - sold,
+    );
+  }
+
+  if (type === "wordMultiply") {
+    const multiplier = randomInt(2, 9);
+    const each = randomInt(Math.max(3, Math.floor(range * 0.06)), Math.floor(range / multiplier));
+    return buildQuestion(
+      `Một cửa hàng có ${multiplier} thùng, mỗi thùng ${each} quyển sách. Hỏi có tất cả bao nhiêu quyển sách?`,
+      each * multiplier,
+    );
+  }
+
+  const divisor = randomInt(2, 9);
+  const each = randomInt(Math.max(3, Math.floor(range * 0.05)), Math.floor(range / divisor));
+  return buildQuestion(
+    `Có ${each * divisor} cái bánh chia đều cho ${divisor} lớp. Hỏi mỗi lớp nhận được bao nhiêu cái bánh?`,
+    each,
+  );
 }
 
 function makeHardQuestion(index) {
-  const type = index % 3 === 0
+  const type = index % 10 < 3
     ? "word"
-    : choose(["expressionAddThenDivide", "expressionMultiplySubtract", "expressionAddMultiply", "word"]);
+    : choose(["largeMultiplySubtract", "largeMultiplyAdd", "subtractThenDivide", "addThenDivide", "largeDivideRemainder"]);
 
-  if (type === "expressionAddThenDivide") {
+  if (type === "word") {
+    return makeHardWordQuestion();
+  }
+
+  if (type === "largeMultiplySubtract") {
+    const oneDigit = randomInt(2, 9);
+    const large = randomInt(1200, Math.floor(98000 / oneDigit));
+    const product = large * oneDigit;
+    const subtract = randomInt(300, Math.min(25000, product - 100));
+    return buildQuestion(`${large} x ${oneDigit} - ${subtract} = ?`, product - subtract);
+  }
+
+  if (type === "largeMultiplyAdd") {
+    const oneDigit = randomInt(2, 9);
+    const large = randomInt(1000, Math.floor(90000 / oneDigit));
+    const add = randomInt(500, Math.min(99999 - large * oneDigit, 12000));
+    return buildQuestion(`${add} + ${large} x ${oneDigit} = ?`, add + large * oneDigit);
+  }
+
+  if (type === "subtractThenDivide") {
     const divisor = randomInt(2, 9);
-    const answer = randomInt(8, 15);
-    const total = divisor * answer;
-    const a = randomInt(6, total - 5);
-    const b = total - a;
-    return buildQuestion(`(${a} + ${b}) : ${divisor} = ?`, answer);
+    const quotient = randomInt(1200, Math.floor(82000 / divisor));
+    const total = quotient * divisor;
+    const subtract = randomInt(700, Math.min(17000, 99999 - total));
+    const start = total + subtract;
+    return buildQuestion(`(${start} - ${subtract}) : ${divisor} = ?`, quotient);
   }
 
-  if (type === "expressionMultiplySubtract") {
-    const a = randomInt(3, 9);
-    const b = randomInt(3, 9);
-    const subtract = randomInt(5, Math.min(30, a * b - 1));
-    return buildQuestion(`${a} x ${b} - ${subtract} = ?`, a * b - subtract);
+  if (type === "addThenDivide") {
+    const divisor = randomInt(2, 9);
+    const quotient = randomInt(1500, 10000);
+    const total = quotient * divisor;
+    const first = randomInt(900, total - 500);
+    const second = total - first;
+    return buildQuestion(`(${first} + ${second}) : ${divisor} = ?`, quotient);
   }
 
-  if (type === "expressionAddMultiply") {
-    const a = randomInt(12, 45);
-    const b = randomInt(2, 9);
-    const c = randomInt(3, 9);
-    return buildQuestion(`${a} + ${b} x ${c} = ?`, a + b * c);
-  }
-
-  return makeHardWordQuestion();
+  return makeLargeDivisionQuestion();
 }
 
 function makeHardWordQuestion() {
-  const type = choose(["boxesMinus", "pagesAdd", "groupsDivide"]);
+  const type = choose(["booksMultiplyMinus", "warehouseMultiplyAdd", "shareWithRemainder"]);
 
-  if (type === "boxesMinus") {
-    const boxes = randomInt(3, 9);
-    const perBox = randomInt(3, 9);
-    const giveAway = randomInt(4, boxes * perBox - 3);
+  if (type === "booksMultiplyMinus") {
+    const boxes = randomInt(2, 9);
+    const perBox = randomInt(1200, Math.floor(90000 / boxes));
+    const giveAway = randomInt(500, Math.min(15000, boxes * perBox - 1000));
     return buildQuestion(
-      `Lan có ${boxes} hộp, mỗi hộp ${perBox} viên bi. Lan cho bạn ${giveAway} viên. Lan còn bao nhiêu viên bi?`,
+      `Thư viện có ${boxes} thùng sách, mỗi thùng ${perBox} quyển. Sau đó tặng đi ${giveAway} quyển. Thư viện còn bao nhiêu quyển sách?`,
       boxes * perBox - giveAway,
     );
   }
 
-  if (type === "pagesAdd") {
-    const days = randomInt(3, 8);
-    const perDay = randomInt(4, 9);
-    const extra = randomInt(6, 28);
+  if (type === "warehouseMultiplyAdd") {
+    const bags = randomInt(2, 9);
+    const perBag = randomInt(1000, Math.floor(85000 / bags));
+    const extra = randomInt(700, Math.min(12000, 99999 - bags * perBag));
     return buildQuestion(
-      `Minh đọc ${days} ngày, mỗi ngày ${perDay} trang. Sau đó Minh đọc thêm ${extra} trang. Minh đã đọc tất cả bao nhiêu trang?`,
-      days * perDay + extra,
+      `Một kho có ${bags} bao gạo, mỗi bao ${perBag} kg. Kho nhập thêm ${extra} kg. Hỏi kho có tất cả bao nhiêu kg gạo?`,
+      bags * perBag + extra,
     );
   }
 
-  const groups = randomInt(3, 9);
-  const each = randomInt(3, 9);
-  const extra = randomInt(2, 9);
+  const divisor = randomInt(2, 9);
+  const quotient = randomInt(1200, 11000);
+  const remainder = randomInt(1, divisor - 1);
+  const afterGift = quotient * divisor + remainder;
+  const gift = randomInt(500, Math.min(12000, 99999 - afterGift));
+  const total = afterGift + gift;
   return buildQuestion(
-    `Có ${groups * each + extra} cái kẹo, đã chia đều cho ${groups} bạn mỗi bạn ${each} cái. Còn lại bao nhiêu cái kẹo?`,
-    extra,
+    `Có ${total} quyển vở, đã tặng ${gift} quyển. Số vở còn lại chia đều cho ${divisor} lớp. Mỗi lớp nhận được bao nhiêu quyển và còn dư bao nhiêu quyển?`,
+    formatRemainderAnswer(quotient, remainder),
   );
+}
+
+function makeLargeDivisionQuestion() {
+  const divisor = randomInt(2, 9);
+  const quotient = randomInt(1200, 11000);
+  const remainder = randomInt(1, divisor - 1);
+  const dividend = quotient * divisor + remainder;
+  const add = randomInt(500, Math.min(12000, 99999 - dividend));
+  return buildQuestion(`(${dividend + add} - ${add}) : ${divisor} = ?`, formatRemainderAnswer(quotient, remainder));
 }
 
 function buildQuestion(text, answer) {
   return {
     text,
-    answer,
+    answer: String(answer),
     options: makeOptions(answer),
     key: normalizeQuestionKey(text),
   };
 }
 
 function makeOptions(answer) {
-  const options = new Set([answer]);
+  if (typeof answer === "string" && answer.includes("dư")) {
+    return makeRemainderOptions(answer);
+  }
+
+  const numericAnswer = Number(answer);
+  const options = new Set([String(numericAnswer)]);
   const offsets = shuffle([-12, -10, -8, -6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6, 8, 10, 12]);
 
   for (const offset of offsets) {
@@ -746,17 +860,57 @@ function makeOptions(answer) {
       break;
     }
 
-    const candidate = answer + offset;
+    const candidate = numericAnswer + offset;
     if (candidate >= 0) {
-      options.add(candidate);
+      options.add(String(candidate));
     }
   }
 
   while (options.size < 4) {
-    options.add(answer + randomInt(1, 18));
+    options.add(String(numericAnswer + randomInt(1, 18)));
   }
 
   return shuffle(Array.from(options));
+}
+
+function makeRemainderOptions(answer) {
+  const { quotient, remainder } = parseRemainderAnswer(answer);
+  const options = new Set([answer]);
+  const variants = shuffle([
+    formatRemainderAnswer(quotient + 1, remainder),
+    formatRemainderAnswer(Math.max(0, quotient - 1), remainder),
+    formatRemainderAnswer(quotient + randomInt(2, 5), remainder),
+    formatRemainderAnswer(Math.max(0, quotient - randomInt(2, 5)), remainder),
+    formatRemainderAnswer(quotient, Math.max(0, remainder - 1)),
+    formatRemainderAnswer(quotient, remainder + 1),
+    formatRemainderAnswer(quotient + 1, Math.max(0, remainder - 1)),
+    formatRemainderAnswer(Math.max(0, quotient - 1), remainder + 1),
+  ]);
+
+  for (const variant of variants) {
+    if (options.size >= 4) {
+      break;
+    }
+    options.add(variant);
+  }
+
+  while (options.size < 4) {
+    options.add(formatRemainderAnswer(quotient + randomInt(1, 9), remainder));
+  }
+
+  return shuffle(Array.from(options));
+}
+
+function parseRemainderAnswer(answer) {
+  const match = String(answer).match(/^(\d+)\s+dư\s+(\d+)$/);
+  return {
+    quotient: match ? Number(match[1]) : 0,
+    remainder: match ? Number(match[2]) : 0,
+  };
+}
+
+function formatRemainderAnswer(quotient, remainder) {
+  return `${quotient} dư ${remainder}`;
 }
 
 function normalizeQuestionKey(text) {
